@@ -97,6 +97,7 @@ def read_graph_file(DS, path):
 
     return graphs
 
+ogb = [ 'ogbg-molbbbp+ogbg-molbace', 'ogbg-molfreesolv+ogbg-moltoxcast', 'ogbg-moltox21+ogbg-molsider']
 
 def init_structural_encoding(gs, rw_dim=16, dg_dim=16):
     for g in gs:
@@ -166,24 +167,24 @@ def get_ood_dataset(args, train_per=0.8, need_str_enc=False):
     indices = torch.randperm(num_sample)
     idx_train = torch.sort(indices[:num_train])[0]
 
-    if TU:
+    if args.DS_pair in ogb:
+        idx_valid = torch.sort(indices[num_train: num_train+num_valid])[0]       
+        idx_test = torch.sort(indices[num_train+num_valid:])[0]
+    else:
         idx_test = torch.sort(indices[num_train: num_train+num_test])[0]
         idx_valid = torch.sort(indices[num_train+num_test:])[0]
-    else:
-        idx_valid = torch.sort(indices[num_train: num_train+num_valid])[0]     
-        idx_test = torch.sort(indices[num_train+num_valid:])[0]
 
     dataset_train = dataset[idx_train]
     dataset_valid = dataset[idx_valid]
     dataset_test = dataset[idx_test]
     dataset_train_aug = dataset_aug[idx_train]    
 
-    if TU:
-        dataset_valid_ood = dataset_ood[len(dataset_test): len(dataset_valid) + len(dataset_test)]
-        dataset_test_ood = dataset_ood[: len(dataset_test)]  
-    else:
+    if args.DS_pair in ogb:
         dataset_valid_ood = dataset_ood[: len(dataset_valid)]
         dataset_test_ood = dataset_ood[len(dataset_valid): len(dataset_valid) + len(dataset_test)]
+    else:
+        dataset_valid_ood = dataset_ood[len(dataset_test): len(dataset_valid) + len(dataset_test)]
+        dataset_test_ood = dataset_ood[: len(dataset_test)]
 
     data_list_train = []
     data_list_train2 = []
