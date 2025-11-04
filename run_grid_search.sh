@@ -27,7 +27,7 @@ function get_available_gpu() {
 for lr_val in 0.1 0.01 0.001
 do
   for dgp_lr_val in 0.1 0.01 0.001 0.0001
-do
+  do
     for lambda_ in 0.1 0.5 1.0 5.0 10.0
     do
       for alpha_1 in 100 1000 10000 100000
