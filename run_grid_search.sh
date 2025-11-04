@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 
 LOG_FILE="grid_search_results.log"
-MAX_CONCURRENT_JOBS=8
+MAX_CONCURRENT_JOBS=8 
 
 function check_gpu_status() {
     local gpu_id=$1
@@ -21,34 +21,40 @@ function get_available_gpu() {
             return
         fi
     done
-    echo "-1"
+    echo "-1" 
 }
 
-for lambda_ in 0.1 0.5 1.0 5.0 10.0
+for lr_val in 0.1 0.01 0.001
 do
-  for alpha_1 in 100 1000 10000 100000
-  do
-    for alpha_2 in 100 1000 10000 100000
+  for dgp_lr_val in 0.1 0.01 0.001 0.0001
+do
+    for lambda_ in 0.1 0.5 1.0 5.0 10.0
     do
-      for gamma in 0.1 0.5 1.0 5.0 10.0
+      for alpha_1 in 100 1000 10000 100000
       do
-        while true
+        for alpha_2 in 100 1000 10000 100000
         do
-            available_gpu=$(get_available_gpu)
-            if [ "$available_gpu" -ne -1 ]; then
-                echo "Running with lambda_=$lambda_, alpha_1=$alpha_1, alpha_2=$alpha_2, gamma=$gamma on GPU $available_gpu" | tee -a $LOG_FILE
-                python DGP-GCL.py --DS ogbg-moltox21 --model_type dgp-gcl --lr 0.01 --device $available_gpu --DS_pair ogbg-moltox21+ogbg-molsider --lambda_ $lambda_ --alpha_1 $alpha_1 --alpha_2 $alpha_2 --gamma $gamma >> $LOG_FILE 2>&1 &
-                sleep 10
-                break
-            else
-                echo "No available GPUs. Waiting for a GPU to become available..." | tee -a $LOG_FILE
-                sleep 30
+          for gamma in 0.1 0.5 1.0 5.0 10.0
+          do
+            while true
+            do
+                available_gpu=$(get_available_gpu)
+                if [ "$available_gpu" -ne -1 ]; then
+                    echo "Running with lr_=$lr_val, dgp_lr_=$dgp_lr_val, lambda_=$lambda_, alpha_1=$alpha_1, alpha_2=$alpha_2, gamma=$gamma on GPU $available_gpu" | tee -a $LOG_FILE
+                    python DGP-GCL.py --DS ogbg-moltox21 --model_type dgp-gcl --hidden-dim 32 --num-gc-layers 3 --aug random2 --epochs 100 --device $available_gpu --DS_pair ogbg-moltox21+ogbg-molsider --lambda_ $lambda_ --alpha_1 $alpha_1 --alpha_2 $alpha_2 --gamma $gamma --lr $lr_val --dgp_lr $dgp_lr_val >> $LOG_FILE 2>&1 &
+                    sleep 10
+                    break
+                else
+                    echo "No available GPUs. Waiting for a GPU to become available..." | tee -a $LOG_FILE
+                    sleep 30
+                fi
+            done
+            running_jobs=$(jobs -p | wc -l)
+            if [ "$running_jobs" -ge "$MAX_CONCURRENT_JOBS" ]; then
+                wait -n 
             fi
+          done
         done
-        running_jobs=$(jobs -p | wc -l)
-        if [ "$running_jobs" -ge "$MAX_CONCURRENT_JOBS" ]; then
-            wait -n
-        fi
       done
     done
   done
