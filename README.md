@@ -1,3 +1,5 @@
+# Disentangled Graph Prompting for Out-Of-Distribution Detection
+
 **DGP (Disentangled Graph Prompting)** is a prompt-based framework for **graph out-of-distribution (OOD) detection** under the pre-training paradigm.
 
 Instead of fine-tuning the entire GNN encoder, DGP freezes a pre-trained graph encoder and learns **two complementary prompt graphs** to capture fine-grained in-distribution patterns:
